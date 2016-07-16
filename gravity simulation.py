@@ -1,5 +1,5 @@
 
-import pygame, math, sys, os, platform
+import pygame, math, sys, os, platform, time
 import Tkinter as tk
 from Tkinter import *
 from pygame.locals import *
@@ -9,7 +9,7 @@ edge_clamp = False
 bgColour = (0,0,0)
 G = 6.67e-11
 width, height = 1506, 760
-FPS = 120
+FPS = 525600
 sunX = width/2
 sunY = height/2
 sunMass = 1.989e30
@@ -22,8 +22,11 @@ dt = 1
 
 
 def sol(): #function that creates our solar system
-    global dt
-    dt = 0
+
+    newPlanet(3.30e23, 56600, math.radians(90), sunX + 46, sunY) #mercury
+    newPlanet(4.87e24, 35000, math.radians(90), sunX + 107, sunY) #venus
+    newPlanet(5.97e24, 30300, math.radians(90), sunX + 147, sunY) #earth
+    newPlanet(6.24e23, 26500, math.radians(90), sunX + 206, sunY) #mars
     
 
 def setSpeed(event):
@@ -65,7 +68,7 @@ def addPlanet():
         ndegrees = float(add_angle.get())
         nangle = math.radians(ndegrees)
         nradius = float(add_radius.get())
-        newPlanet(nmass, nvi, nangle, sunX + nradius , sunY)
+        newPlanet(nmass, nvi, nangle, sunX + nradius, sunY)
 
     b_go = tk.Button(top, text="go", command = checkValues)
     b_go.pack()
@@ -105,15 +108,17 @@ class MainWindow(tk.Frame):
 class Planet:
     def __init__(self, mass, vi, angle, x, y):
         self.mass = mass
+        
         self.vi = vi
+        
         self.angle = angle
         self.x = x
         self.y = y
-        self.dx = abs(x - sunX)
-        self.dy = abs(y - sunY)
+        self.dx = abs(x - sunX) * 1e9
+        self.dy = abs(y - sunY) * 1e9
         self.radius = 4
-        self.vx = vi * math.cos(angle)
-        self.vy = vi * math.sin(angle)
+        self.vx = self.vi * math.cos(angle)
+        self.vy = self.vi * math.sin(angle)
         
 
     def render(self):
@@ -132,7 +137,8 @@ def newPlanet(mass, vi, angle, x, y):
 if __name__ == "__main__":
         root = tk.Tk()
         main = MainWindow(root)
-        main.pack(side="top",fill="both",expand=True) 
+        main.pack(side="top",fill="both",expand=True)
+
                 
 def simulationLoop(): #main sim loop
 
@@ -143,32 +149,42 @@ def simulationLoop(): #main sim loop
     
        #loop through every planet and update their properties
     for planet in planetList:
+        
         pygame.draw.circle(MainWindow.screen,(255,255,0), (sunX, sunY), 14, 0) 
         planet.delete()
-        planet.dx = abs(planet.x - sunX)
-        planet.dy = abs(planet.y - sunY)
-        r = (planet.dx + planet.dy)**2
-        gravity = (sunMass * G)/((math.sqrt(((planet.dx*1e9)**2)+((planet.dy*1e9)**2)))**2) #Gmm/r2 , with the conversion from pixel to meter.
+        
+        r = math.sqrt((planet.dx**2 + planet.dy**2))
+        gravity = (sunMass * G)/(r**2) #Gmm/r2                      
         if planet.dx == 0:
             theta = math.radians(90)
         else:
             theta = math.atan(planet.dy/planet.dx)
-        gravx = gravity * math.cos(theta)
-        gravy = gravity * math.sin(theta)
+        gravx = gravity * abs(math.cos(theta))
+        gravy = gravity * abs(math.sin(theta))
+        
 
         #account for the fact that the co-ordinates are relative to the top left of the page
 
         if (planet.x - sunX) > 0:
-            gravx = -1 * gravx
+            a_gravx = -1 * gravx
+        else:
+            a_gravx = gravx
         if (planet.y - sunY) > 0:
-            gravy = -1 * gravy
+            a_gravy = -1 * gravy
+        else:
+            a_gravy = gravy
 
         #update the planet's speed and distance using standard kinematics equations
-        
-        planet.vy += gravy*dt
-        planet.vx += gravx*dt
-        planet.x += planet.vx*dt
-        planet.y += planet.vy*dt 
+    
+        planet.vy += a_gravy*dt
+        planet.vx += a_gravx*dt
+        planet.vy_pix = planet.vy/1e9
+        planet.vx_pix = planet.vx/1e9
+        planet.x += planet.vx_pix*dt
+        planet.y += planet.vy_pix*dt
+        planet.dx = abs(planet.x - sunX) * 1e9
+        planet.dy = abs(planet.y - sunY) * 1e9
+        print(math.sqrt(planet.dx**2 + planet.dy**2));
         planet.render()
 
         
