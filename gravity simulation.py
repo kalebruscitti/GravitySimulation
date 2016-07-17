@@ -37,7 +37,7 @@ def setSpeed(event):
     
 
 def addPlanet():
-                
+    #create popup UI
     top = tk.Toplevel(root)
     top.wm_title("Add Planet")
                 
@@ -105,12 +105,27 @@ def clear():
     for planet in planetList:
         planet.delete()
         planetList.remove(planet)
-                
+def clearTrails():
+    MainWindow.screen.fill(bgColour)
+    pygame.draw.circle(self.screen,(255,255,0), (sunX, sunY), 14, 0) 
+    pygame.display.update()
+    
 class MainWindow(tk.Frame):
+    
+    global particleTrails
+    particleTrails = 0
 
+
+        
+    def setTrails(self):
+        global particleTrails
+        particleTrails = self.var.get()
+        
+            
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, width = 100, *args, **kwargs)
-
+        self.var = IntVar()
+        
         #add the UI
         self.add_button = tk.Button(self, text='Add Planet', padx = 10, pady = 10, command = addPlanet)
         self.add_button.grid(row = 1, columnspan=2, column = 1)
@@ -125,6 +140,13 @@ class MainWindow(tk.Frame):
         self.clear_all = tk.Button(self, text="Clear Planets", padx = 10, pady = 10, command = clear)
         self.clear_all.grid(columnspan=2, row=5, column=1)
 
+        self.clear_trails = tk.Button(self, text="Clear Trails", padx = 10, pady = 10, command = clearTrails)
+        self.clear_trails.grid(columnspan=2, row=7, column=1)
+        
+        self.trails = tk.Checkbutton(self, text="Planet Trails", variable = self.var, command = self.setTrails)
+        self.trails.grid(row=6, column = 2)
+        
+        
         self.scale = tk.Label(self, text = "Scale: 1 pixel = 1 Million KM")
         self.scale.grid(row=4, columnspan=2, column=1)
 
@@ -143,9 +165,11 @@ class MainWindow(tk.Frame):
         pygame.display.set_caption('sun')
         MainWindow.screen.fill(bgColour)
         pygame.draw.circle(self.screen,(255,255,0), (sunX, sunY), 14, 0) 
-        pygame.display.update() 
+        pygame.display.update()
     
+        
 
+        
 class Planet:
     def __init__(self, mass, vi, angle, x, y):
         self.mass = mass
@@ -198,8 +222,10 @@ def simulationLoop(): #main sim loop
        #loop through every planet and update their properties
     for planet in planetList:
         
-        pygame.draw.circle(MainWindow.screen,(255,255,0), (sunX, sunY), 14, 0) 
-        planet.delete()
+        pygame.draw.circle(MainWindow.screen,(255,255,0), (sunX, sunY), 14, 0)
+      
+        if particleTrails == 0:
+            planet.delete()
         
         r = math.sqrt((planet.dx**2 + planet.dy**2))
         gravity = (sunMass * G)/(r**2) #Gmm/r2                      
