@@ -198,6 +198,7 @@ class Planet:
 
     def delete(self):
         pygame.draw.circle(MainWindow.screen, (0,0,0), (int(self.x), int(self.y)), self.radius, 0)
+        #I am ashamed of this
 
  
 def newPlanet(mass, vi, angle, x, y, r, g, b):
